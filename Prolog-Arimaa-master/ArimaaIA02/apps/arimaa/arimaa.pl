@@ -17,7 +17,7 @@ in(X,[X|_]):-!.
 in(X,[_|Q]):-in(X,Q).
 
 different_list([T1|Q1],[T2|Q2]):-T1\=T2.
-different_list([T1|Q1],[T2|Q2]):-different_list(T1,T2).
+different_list([T1|_],[T2|_]):-different_list(T1,T2).
 different_list([X|Q1],[X|Q2]):-different_list(Q1,Q2).
 
 adjacent(Lin1,Col1,Lin2,Col1):-Lin1<7, Lin2 is Lin1+1.
