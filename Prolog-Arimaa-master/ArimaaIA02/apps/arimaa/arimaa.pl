@@ -53,3 +53,7 @@ adjust_board([X|Q1], [[Lin1,Col1],[Lin2,Col2]], [X|Q2]):-adjust_board(Q1,[[Lin1,
 generate_move(BoardX,[T|_],T,BoardY):-adjust_board(BoardX,T,BoardY).
 
 % generate_move(BoardX,[T|Q],M,BoardY):-generate_move(BoardX,Q,M,BoardY).
+
+%------------------------------------------------------------------------
+%----------Prédicats-----------------------------------------------------
+%------------------------------------------------------------------------
