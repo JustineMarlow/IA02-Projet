@@ -51,4 +51,7 @@ adjust_board([[Lin1,Col1,X,Y]|Q], [[Lin1,Col1],[Lin2,Col2]], [[Lin2,Col2,X,Y]|Q]
 adjust_board([X|Q1], [[Lin1,Col1],[Lin2,Col2]], [X|Q2]):-adjust_board(Q1,[[Lin1,Col1],[Lin2,Col2]],Q2).
 
 generate_move(BoardX,[T|_],T,BoardY):-adjust_board(BoardX,T,BoardY),!.
+% generate_move(BoardX,[[[Lin1,Col1],[Lin2,Col2]]|_],[[Lin1,Col1],[Lin2,Col2]],BoardY):-in([Lin1,Col1,rabbit,silver],BoardX), adjust_board(BoardX,[[Lin1,Col1],[Lin2,Col2]],BoardY),!.
 generate_move(BoardX,[_|Q],M,BoardY):-generate_move(BoardX,Q,M,BoardY).
+
+
