@@ -35,10 +35,10 @@ plus_fort(elephant,camel).
 
 freeze(B,[Lin1,Col1,X,silver]):- \+cannot_freeze(B,[Lin1,Col1,X,silver]), adjacent(Lin1,Col1,Lin2,Col2), in([Lin2,Col2,Y,gold],B), plus_fort(Y,X).
 
-en_avant(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1<7, Lin2 is Lin1+1, \+in([Lin2,Col1,_,_],B), \+trap(B,[Lin2,Col1],[Lin1,Col1]).
-en_arriere(B,[Lin1,Col1,Type,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1>0, Type\=rabbit, Lin2 is Lin1-1, \+in([Lin2,Col1,_,_],B), \+trap(B,[Lin2,Col1],[Lin1,Col1]).
-a_droite(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1<7, Col2 is Col1+1, \+in([Lin1,Col2,_,_],B), \+trap(B,[Lin1,Col2],[Lin1,Col1]).
-a_gauche(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1>0, Col2 is Col1-1, \+in([Lin1,Col2,_,_],B), \+trap(B,[Lin1,Col2],[Lin1,Col1]).
+en_avant(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1<7, Lin2 is Lin1+1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1]).
+en_arriere(B,[Lin1,Col1,Type,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1>0, Type\=rabbit, Lin2 is Lin1-1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1]).
+a_droite(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1<7, Col2 is Col1+1, \+in([Lin1,Col2,_,_],B), notrap(B,[Lin1,Col2],[Lin1,Col1]).
+a_gauche(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1>0, Col2 is Col1-1, \+in([Lin1,Col2,_,_],B), notrap(B,[Lin1,Col2],[Lin1,Col1]).
 
 possible_moves(_,[],_,_):-!.
 possible_moves(B,[T|Q],ListX,[M|ListY]):- en_avant(B,T,M), \+in(M,ListX), \+freeze(B,T), possible_moves(B,[T|Q],[M|ListX],ListY).
@@ -56,14 +56,15 @@ generate_move(BoardX,[_|Q],M,BoardY):-generate_move(BoardX,Q,M,BoardY).
 gen_move(BoardX,Moves,M,BoardY):-value_moves(BoardX,Moves,Values), max_a(Values,X), indice(Values,I,X), indice(Moves,I,M), adjust_board(BoardX,M,BoardY).
 
 value_moves(_,[],[]).
-value_moves(B,[[[X,Y],[X2,Y]]|M], [20|R]) :- in([X,Y,rabbit,silver],B), X2 is X+1, value_moves(B,M,R),!.
-value_moves(B,[_|M],[10|R]) :- value_moves(B,M,R).
+value_moves(Board,[[[X,Y],[A,B]]|M], [100|R]) :- canwin(Board,[X,Y],[[X,Y]|[[A,B]|C]]), value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[A,B]]|M], [90|R]) :- couldwin(Board,[X,Y],[[X,Y]|[[A,B]|C]]), value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[X2,Y]]|M], [20|R]) :- in([X,Y,rabbit,silver],Board), X2 is X+1, value_moves(Board,M,R),!.
+value_moves(Board,[_|M],[10|R]) :- value_moves(Board,M,R).
 
 indice([X|_],1,X).
 indice([_|Y],N,X):- indice(Y,M,X),N is M+1.
 
 max_a([T|List],IndiceMax):-max(List,T,IndiceMax).
-
 
 max([],Max,Max).
 max([T|Q],M,Max):-T>M, max(Q,T,Max).
@@ -73,3 +74,42 @@ trap(B,[2,2],[L,C]):-adjacent(2,2,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_
 trap(B,[2,5],[L,C]):-adjacent(2,5,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,silver],B).
 trap(B,[5,2],[L,C]):-adjacent(5,2,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,silver],B).
 trap(B,[5,5],[L,C]):-adjacent(5,5,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,silver],B).
+
+notrap(B,[X,Y],_):-different_list([X,Y],[2,2]), different_list([X,Y],[5,2]), different_list([X,Y],[2,5]), different_list([X,Y],[5,5]).
+notrap(B,[X,Y],[L,C]):-adjacent(X,Y,X2,Y2),different_list([L,C],[X2,Y2]),in([X2,Y2,_,silver],B).
+
+longueur([],0).
+longueur([_|Q],N) :- longueur(Q,M), N is M+1.
+
+chemin([X,Y],[X2,Y],B,[[X,Y],[X2,Y]]) :- N is X2-X,valabs(N,1),\+in([X2,Y,_,_],B),X<8,X2<8.
+chemin([X,Y],[X,Y2],B,[[X,Y],[X,Y2]]) :- N is Y2-Y,valabs(N,1),\+in([X,Y2,_,_],B),Y<8,Y2<8.
+chemin([A,B],[C,D],T,[[A,B]|Q]) :- A<C,X is A+1,\+in([X,B,_,_],T),chemin([X,B],[C,D],T,Q).
+chemin([A,B],[C,D],T,[[A,B]|Q]) :- A>C,X is A-1,\+in([X,B,_,_],T),chemin([X,B],[C,D],T,Q).
+chemin([A,B],[C,D],T,[[A,B]|Q]) :- B<D,X is B+1,\+in([X,B,_,_],T),chemin([A,X],[C,D],T,Q).
+chemin([A,B],[C,D],T,[[A,B]|Q]) :- B>D,X is B-1,\+in([X,B,_,_],T),chemin([A,X],[C,D],T,Q).
+
+pcc([A,B],[C,D],T,Cmin):-chemin([A,B],[C,D],T,Ct),pcc2([A,B],[C,D],T,Ct,Cmin).
+
+pcc2([A,B],[C,D],T,Ct,Cmin):-chemin([A,B],[C,D],T,L),longueur(L,N1),longueur(Ct,N2),N1<N2,pcc2([A,B],[C,D],T,L,Cmin).
+pcc2(_,_,_,Cmin,Cmin).
+
+valabs(X,Y) :- X<0,Y is (-1)*X,!.	%Calcul de la valeur absolue : valabs(x,|x|)
+valabs(X,X).
+
+couldwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,0],B,C).
+couldwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,1],B,C).
+couldwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,2],B,C).
+couldwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,3],B,C).
+couldwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,4],B,C).
+couldwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,5],B,C).
+couldwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,6],B,C).
+couldwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,7],B,C).
+
+canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,0],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,1],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,2],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,3],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,4],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,5],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,6],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,7],B,C), longueur(C,L), L=<4.
