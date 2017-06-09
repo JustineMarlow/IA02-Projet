@@ -41,10 +41,10 @@ plus_fort(elephant,camel).
 
 freeze(B,[Lin1,Col1,X,silver]):- \+cannot_freeze(B,[Lin1,Col1,X,silver]), adjacent(Lin1,Col1,Lin2,Col2), in([Lin2,Col2,Y,gold],B), plus_fort(Y,X).
 
-en_avant(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1<7, Lin2 is Lin1+1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1]).
-en_arriere(B,[Lin1,Col1,Type,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1>0, Type\=rabbit, Lin2 is Lin1-1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1]).
-a_droite(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1<7, Col2 is Col1+1, \+in([Lin1,Col2,_,_],B), notrap(B,[Lin1,Col2],[Lin1,Col1]).
-a_gauche(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1>0, Col2 is Col1-1, \+in([Lin1,Col2,_,_],B), notrap(B,[Lin1,Col2],[Lin1,Col1]).
+en_avant(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1<7, Lin2 is Lin1+1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1],silver).
+en_arriere(B,[Lin1,Col1,Type,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1>0, Type\=rabbit, Lin2 is Lin1-1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1],silver).
+a_droite(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1<7, Col2 is Col1+1, \+in([Lin1,Col2,_,_],B), notrap(B,[Lin1,Col2],[Lin1,Col1],silver).
+a_gauche(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1>0, Col2 is Col1-1, \+in([Lin1,Col2,_,_],B), notrap(B,[Lin1,Col2],[Lin1,Col1],silver).
 
 pousser_en_avant(B,[Lin1,Col1,Type1,gold],[[Lin1,Col1],[Lin2,Col1]]):- Lin1<7, Lin2 is Lin1+1, \+in([Lin2,Col1,_,_],B), adjacent(Lin1,Col1,Lin3,Col3), in([Lin3,Col3,Type2,silver],B), \+freeze(B,[Lin3,Col3,Type2,silver]), plus_fort(Type2,Type1).
 pousser_en_arriere(B,[Lin1,Col1,Type1,gold],[[Lin1,Col1],[Lin2,Col1]]):- Lin1>0, Lin2 is Lin1-1, \+in([Lin2,Col1,_,_],B), adjacent(Lin1,Col1,Lin3,Col3), in([Lin3,Col3,Type2,silver],B), \+freeze(B,[Lin3,Col3,Type2,silver]), plus_fort(Type2,Type1).
@@ -75,9 +75,10 @@ gen_move(BoardX,Moves,[[X,Y],[A,B]],BoardY):-value_moves(BoardX,Moves,Values), m
 gen_move(BoardX,Moves,M,BoardY):-value_moves(BoardX,Moves,Values), max_a(Values,X), indice(Values,I,X), indice(Moves,I,M), adjust_board(BoardX,M,BoardY).
 
 value_moves(_,[],[]).
-value_moves(Board,[[[X,Y],[_,_]]|M], [150|R]) :- in([X,Y,_,gold],Board),value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[A,B]]|M], [100|R]) :- canwin(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
-value_moves(Board,[[[X,Y],[A,B]]|M], [90|R]) :- couldwin(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[A,B]]|M], [90|R]) :- in([X,Y,_,gold],Board), trap(Board,[A,B],[X,Y],gold), value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[A,B]]|M], [80|R]) :- couldwin(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
+% value_moves(Board,[[[X,Y],[A,B]]|M], [50|R]) :- in([X,Y,_,gold],Board), value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[X2,Y]]|M], [20|R]) :- in([X,Y,rabbit,silver],Board), X2 is X+1, value_moves(Board,M,R),!.
 value_moves(Board,[_|M],[10|R]) :- value_moves(Board,M,R).
 
@@ -90,13 +91,13 @@ max([],Max,Max).
 max([T|Q],M,Max):-T>M, max(Q,T,Max).
 max([T|Q],M,Max):-T=<M, max(Q,M,Max).
 
-trap(B,[2,2],[L,C]):-adjacent(2,2,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,silver],B).
-trap(B,[2,5],[L,C]):-adjacent(2,5,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,silver],B).
-trap(B,[5,2],[L,C]):-adjacent(5,2,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,silver],B).
-trap(B,[5,5],[L,C]):-adjacent(5,5,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,silver],B).
+trap(B,[2,2],[L,C],Color):-adjacent(2,2,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,Color],B).
+trap(B,[2,5],[L,C],Color):-adjacent(2,5,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,Color],B).
+trap(B,[5,2],[L,C],Color):-adjacent(5,2,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,Color],B).
+trap(B,[5,5],[L,C],Color):-adjacent(5,5,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,Color],B).
 
-notrap(_,[X,Y],_):-different_list([X,Y],[2,2]), different_list([X,Y],[5,2]), different_list([X,Y],[2,5]), different_list([X,Y],[5,5]).
-notrap(B,[X,Y],[L,C]):-adjacent(X,Y,X2,Y2),different_list([L,C],[X2,Y2]),in([X2,Y2,_,silver],B).
+notrap(_,[X,Y],_,_):-different_list([X,Y],[2,2]), different_list([X,Y],[5,2]), different_list([X,Y],[2,5]), different_list([X,Y],[5,5]).
+notrap(B,[X,Y],[L,C],Color):-adjacent(X,Y,X2,Y2),different_list([L,C],[X2,Y2]),in([X2,Y2,_,Color],B).
 
 longueur([],0).
 longueur([_|Q],N) :- longueur(Q,M), N is M+1.
