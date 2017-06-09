@@ -5,19 +5,18 @@
 :- dynamic must_follow_moves/2.
 
 get_moves([Move1,Move2,Move3,Move4], _, Board):- asserta(must_follow_moves(null, [-1,-1])),
-						 retractall(nb_moves(_)),
 						 possible_moves(Board, Board, [], Possible_moves_list1),
 						 gen_move(Board, Possible_moves_list1, Move1, Board1),
-						 asserta(nb_moves(1)),
 						 possible_moves(Board1, Board1, [], Possible_moves_list2),
 						 gen_move(Board1, Possible_moves_list2, Move2, Board2),
-						 asserta(nb_moves(2)),
 						 possible_moves(Board2, Board2, [], Possible_moves_list3),
 						 gen_move(Board2, Possible_moves_list3, Move3, Board3),
 						 asserta(nb_moves(3)),
 						 possible_moves(Board3, Board3, [], Possible_moves_list4),
 						 gen_move(Board3, Possible_moves_list4, Move4, Board4),
-						 different_list(Board,Board4).
+						 different_list(Board,Board4),
+						 retractall(nb_moves(_)),
+						 retractall(must_follow_moves(_,_)).
 
 in(_,[]):-fail.
 in(X,[X|_]):-!.
@@ -32,13 +31,6 @@ adjacent(Lin1,Col1,Lin2,Col1):-Lin1>0, Lin2 is Lin1-1.
 adjacent(Lin1,Col1,Lin1,Col2):-Col1<7, Col2 is Col1+1.
 adjacent(Lin1,Col1,Lin1,Col2):-Col1>0, Col2 is Col1-1.
 
-trap(B,[2,2],[L,C],Color):-adjacent(2,2,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,Color],B).
-trap(B,[2,5],[L,C],Color):-adjacent(2,5,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,Color],B).
-trap(B,[5,2],[L,C],Color):-adjacent(5,2,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,Color],B).
-trap(B,[5,5],[L,C],Color):-adjacent(5,5,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,Color],B).
-notrap(B,[X,Y],_,Color):-different_list([X,Y],[2,2]), different_list([X,Y],[5,2]), different_list([X,Y],[2,5]), different_list([X,Y],[5,5]).
-notrap(B,[X,Y],[L,C],Color):-adjacent(X,Y,X2,Y2),different_list([L,C],[X2,Y2]),in([X2,Y2,_,Color],B).
-
 cannot_freeze(B,[Lin1,Col1,_,silver]):-adjacent(Lin1,Col1,Lin2,Col2), in([Lin2,Col2,_,silver],B).
 
 plus_fort(Y,rabbit):-Y\=rabbit.
@@ -49,51 +41,62 @@ plus_fort(elephant,camel).
 
 freeze(B,[Lin1,Col1,X,silver]):- \+cannot_freeze(B,[Lin1,Col1,X,silver]), adjacent(Lin1,Col1,Lin2,Col2), in([Lin2,Col2,Y,gold],B), plus_fort(Y,X).
 
-en_avant(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1<7, Lin2 is Lin1+1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1],silver).
-en_arriere(B,[Lin1,Col1,Type,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1>0, Type\=rabbit, Lin2 is Lin1-1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1],silver).
-a_droite(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1<7, Col2 is Col1+1, \+in([Lin1,Col2,_,_],B), notrap(B,[Lin1,Col2],[Lin1,Col1],silver).
-a_gauche(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1>0, Col2 is Col1-1, \+in([Lin1,Col2,_,_],B), notrap(B,[Lin1,Col2],[Lin1,Col1],silver).
+en_avant(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1<7, Lin2 is Lin1+1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1]).
+en_arriere(B,[Lin1,Col1,Type,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1>0, Type\=rabbit, Lin2 is Lin1-1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1]).
+a_droite(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1<7, Col2 is Col1+1, \+in([Lin1,Col2,_,_],B), notrap(B,[Lin1,Col2],[Lin1,Col1]).
+a_gauche(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin1,Col2]]):- Col1>0, Col2 is Col1-1, \+in([Lin1,Col2,_,_],B), notrap(B,[Lin1,Col2],[Lin1,Col1]).
 
-pousser_en_avant(B,[Lin1,Col1,Type1,gold],[[Lin1,Col1],[Lin2,Col1]]):- Lin1<7, Lin2 is Lin1+1, \+in([Lin2,Col1,_,_],B), adjacent(Lin1,Col1,Lin3,Col3), in([Lin3,Col3,Type2,silver],B), plus_fort(Type2,Type1).
-pousser_en_arriere(B,[Lin1,Col1,Type1,gold],[[Lin1,Col1],[Lin2,Col1]]):- Lin1>0, Lin2 is Lin1-1, \+in([Lin2,Col1,_,_],B), adjacent(Lin1,Col1,Lin3,Col3), in([Lin3,Col3,Type2,silver],B), plus_fort(Type2,Type1).
-pousser_a_droite(B,[Lin1,Col1,Type1,gold],[[Lin1,Col1],[Lin1,Col2]]):- Col1<7, Col2 is Col1+1, \+in([Lin1,Col2,_,_],B), adjacent(Lin1,Col1,Lin3,Col3), in([Lin3,Col3,Type2,silver],B), plus_fort(Type2,Type1).
-pousser_a_gauche(B,[Lin1,Col1,Type1,gold],[[Lin1,Col1],[Lin1,Col2]]):- Col1>0, Col2 is Col1-1, \+in([Lin1,Col2,_,_],B), adjacent(Lin1,Col1,Lin3,Col3), in([Lin3,Col3,Type2,silver],B), plus_fort(Type2,Type1).
+pousser_en_avant(B,[Lin1,Col1,Type1,gold],[[Lin1,Col1],[Lin2,Col1]]):- Lin1<7, Lin2 is Lin1+1, \+in([Lin2,Col1,_,_],B), adjacent(Lin1,Col1,Lin3,Col3), in([Lin3,Col3,Type2,silver],B), \+freeze(B,[Lin3,Col3,Type2,silver]), plus_fort(Type2,Type1).
+pousser_en_arriere(B,[Lin1,Col1,Type1,gold],[[Lin1,Col1],[Lin2,Col1]]):- Lin1>0, Lin2 is Lin1-1, \+in([Lin2,Col1,_,_],B), adjacent(Lin1,Col1,Lin3,Col3), in([Lin3,Col3,Type2,silver],B), \+freeze(B,[Lin3,Col3,Type2,silver]), plus_fort(Type2,Type1).
+pousser_a_droite(B,[Lin1,Col1,Type1,gold],[[Lin1,Col1],[Lin1,Col2]]):- Col1<7, Col2 is Col1+1, \+in([Lin1,Col2,_,_],B), adjacent(Lin1,Col1,Lin3,Col3), in([Lin3,Col3,Type2,silver],B), \+freeze(B,[Lin3,Col3,Type2,silver]), plus_fort(Type2,Type1).
+pousser_a_gauche(B,[Lin1,Col1,Type1,gold],[[Lin1,Col1],[Lin1,Col2]]):- Col1>0, Col2 is Col1-1, \+in([Lin1,Col2,_,_],B), adjacent(Lin1,Col1,Lin3,Col3), in([Lin3,Col3,Type2,silver],B), \+freeze(B,[Lin3,Col3,Type2,silver]), plus_fort(Type2,Type1).
 
+possible_moves(Board,Board,[],[[[A,B],[X,Y]]]):- must_follow_moves(Type1,[X,Y]), Type1\=null,!, adjacent(X,Y,A,B), in([A,B,Type2,silver],Board), plus_fort(Type2,Type1), \+freeze(Board,[A,B,Type2,silver]), retract(must_follow_moves(Type1,[X,Y])).
 possible_moves(_,[],_,_):-!.
-possible_moves(B,[[X,Y,_,silver]|Q],ListX,[M|ListY]):-freeze(B,[X,Y,_,silver]),possible_moves(B,Q,ListX,ListY).
-possible_moves(B,[[X,Y,_,silver]|Q],ListX,[M|ListY]):- en_avant(B,[X,Y,_,silver],M), \+in(M,ListX), possible_moves(B,[[X,Y,_,silver]|Q],[M|ListX],ListY).
-possible_moves(B,[[X,Y,_,silver]|Q],ListX,[M|ListY]):- en_arriere(B,[X,Y,_,silver],M), \+in(M,ListX), possible_moves(B,[[X,Y,_,silver]|Q],[M|ListX],ListY).
-possible_moves(B,[[X,Y,_,silver]|Q],ListX,[M|ListY]):- a_droite(B,[X,Y,_,silver],M),  \+in(M,ListX), possible_moves(B,[[X,Y,_,silver]|Q],[M|ListX],ListY).
-possible_moves(B,[[X,Y,_,silver]|Q],ListX,[M|ListY]):- a_gauche(B,[X,Y,_,silver],M), \+in(M,ListX), possible_moves(B,[[X,Y,_,silver]|Q],[M|ListX],ListY).
-possible_moves(B,[[X,Y,_,gold]|Q],ListX,[M|ListY]):- \+nb_moves(3), pousser_en_arriere(B,[X,Y,_,gold],M), \+in(M,ListX), possible_moves(B,[[X,Y,_,gold]|Q],[M|ListX],ListY).
-possible_moves(B,[[X,Y,_,gold]|Q],ListX,[M|ListY]):- \+nb_moves(3), pousser_en_avant(B,[X,Y,_,gold],M), \+in(M,ListX), possible_moves(B,[[X,Y,_,gold]|Q],[M|ListX],ListY).
-possible_moves(B,[[X,Y,_,gold]|Q],ListX,[M|ListY]):- \+nb_moves(3), pousser_a_droite(B,[X,Y,_,gold],M), \+in(M,ListX), possible_moves(B,[[X,Y,_,gold]|Q],[M|ListX],ListY).
-possible_moves(B,[[X,Y,_,gold]|Q],ListX,[M|ListY]):- \+nb_moves(3), pousser_a_gauche(B,[X,Y,_,gold],M), \+in(M,ListX), possible_moves(B,[[X,Y,_,gold]|Q],[M|ListX],ListY).
+possible_moves(B,[[X,Y,T,silver]|Q],ListX,ListY):- freeze(B,[X,Y,T,silver]),!, possible_moves(B,Q,ListX,ListY).
+possible_moves(B,[[X,Y,T,silver]|Q],ListX,[M|ListY]):- en_avant(B,[X,Y,T,silver],M), \+in(M,ListX), possible_moves(B,[[X,Y,T,silver]|Q],[M|ListX],ListY).
+possible_moves(B,[[X,Y,T,silver]|Q],ListX,[M|ListY]):- en_arriere(B,[X,Y,T,silver],M), T\=rabbit, \+in(M,ListX), possible_moves(B,[[X,Y,T,silver]|Q],[M|ListX],ListY).
+possible_moves(B,[[X,Y,T,silver]|Q],ListX,[M|ListY]):- a_droite(B,T,M),  \+in(M,ListX), possible_moves(B,[[X,Y,T,silver]|Q],[M|ListX],ListY).
+possible_moves(B,[[X,Y,T,silver]|Q],ListX,[M|ListY]):- a_gauche(B,T,M), \+in(M,ListX), possible_moves(B,[[X,Y,T,silver]|Q],[M|ListX],ListY).
+possible_moves(B,[[X,Y,T,gold]|Q],ListX,[M|ListY]):- \+nb_moves(3), pousser_en_arriere(B,[X,Y,T,gold],M), \+in(M,ListX), possible_moves(B,[[X,Y,T,gold]|Q],[M|ListX],ListY).
+possible_moves(B,[[X,Y,T,gold]|Q],ListX,[M|ListY]):- \+nb_moves(3), pousser_en_avant(B,[X,Y,T,gold],M), \+in(M,ListX), possible_moves(B,[[X,Y,T,gold]|Q],[M|ListX],ListY).
+possible_moves(B,[[X,Y,T,gold]|Q],ListX,[M|ListY]):- \+nb_moves(3), pousser_a_droite(B,[X,Y,T,gold],M), \+in(M,ListX), possible_moves(B,[[X,Y,T,gold]|Q],[M|ListX],ListY).
+possible_moves(B,[[X,Y,T,gold]|Q],ListX,[M|ListY]):- \+nb_moves(3), pousser_a_gauche(B,[X,Y,T,gold],M), \+in(M,ListX), possible_moves(B,[[X,Y,T,gold]|Q],[M|ListX],ListY).
 possible_moves(B,[_|Q],ListX,ListY):-possible_moves(B,Q,ListX,ListY).
 
 adjust_board([[Lin1,Col1,X,Y]|Q], [[Lin1,Col1],[Lin2,Col2]], [[Lin2,Col2,X,Y]|Q]).
 adjust_board([X|Q1], [[Lin1,Col1],[Lin2,Col2]], [X|Q2]):-adjust_board(Q1,[[Lin1,Col1],[Lin2,Col2]],Q2).
 
-gen_move(BoardX,Moves,[[A,B],[X,Y]],BoardY):- must_follow_moves(Type1,[X,Y]), X>=0, in([[A,B],[X,Y]], Moves), in([A,B,Type2,silver],BoardX), plus_fort(Type2,Type1),!, retract(must_follow_moves(Type1,[X,Y])), adjust_board(BoardX,[[A,B],[X,Y]],BoardY).
+generate_move(BoardX,[T|_],T,BoardY):-adjust_board(BoardX,T,BoardY),!.
+generate_move(BoardX,[_|Q],M,BoardY):-generate_move(BoardX,Q,M,BoardY).
 
 gen_move(BoardX,Moves,[[X,Y],[A,B]],BoardY):-value_moves(BoardX,Moves,Values), max_a(Values,N), indice(Values,I,N), indice(Moves,I,[[X,Y],[A,B]]), in([X,Y,Type,gold],BoardX),!, asserta(must_follow_moves(Type,[X,Y])), adjust_board(BoardX,[[X,Y],[A,B]],BoardY).
 
 gen_move(BoardX,Moves,M,BoardY):-value_moves(BoardX,Moves,Values), max_a(Values,X), indice(Values,I,X), indice(Moves,I,M), adjust_board(BoardX,M,BoardY).
 
 value_moves(_,[],[]).
-value_moves(Board,[[[X,Y],[A,B]]|M], [100|R]) :- canwin(Board,[X,Y],[[X,Y]|[[A,B]|C]]), value_moves(Board,M,R),!.
-value_moves(Board,[[[X,Y],[A,B]]|M], [90|R]) :- couldwin(Board,[X,Y],[[X,Y]|[[A,B]|C]]), value_moves(Board,M,R),!.
-value_moves(Board,[[[X,Y],[A,B]]|M], [80|R]) :- in([X,Y,_,gold],Board),value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[_,_]]|M], [150|R]) :- in([X,Y,_,gold],Board),value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[A,B]]|M], [100|R]) :- canwin(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[A,B]]|M], [90|R]) :- couldwin(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[X2,Y]]|M], [20|R]) :- in([X,Y,rabbit,silver],Board), X2 is X+1, value_moves(Board,M,R),!.
 value_moves(Board,[_|M],[10|R]) :- value_moves(Board,M,R).
 
 indice([X|_],1,X).
 indice([_|Y],N,X):- indice(Y,M,X),N is M+1.
 
-max_a([T|List],Max):-max(List,T,Max).
+max_a([T|List],IndiceMax):-max(List,T,IndiceMax).
+
 max([],Max,Max).
 max([T|Q],M,Max):-T>M, max(Q,T,Max).
 max([T|Q],M,Max):-T=<M, max(Q,M,Max).
+
+trap(B,[2,2],[L,C]):-adjacent(2,2,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,silver],B).
+trap(B,[2,5],[L,C]):-adjacent(2,5,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,silver],B).
+trap(B,[5,2],[L,C]):-adjacent(5,2,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,silver],B).
+trap(B,[5,5],[L,C]):-adjacent(5,5,X,Y), different_list([X,Y],[L,C]), \+in([X,Y,_,silver],B).
+
+notrap(_,[X,Y],_):-different_list([X,Y],[2,2]), different_list([X,Y],[5,2]), different_list([X,Y],[2,5]), different_list([X,Y],[5,5]).
+notrap(B,[X,Y],[L,C]):-adjacent(X,Y,X2,Y2),different_list([L,C],[X2,Y2]),in([X2,Y2,_,silver],B).
 
 longueur([],0).
 longueur([_|Q],N) :- longueur(Q,M), N is M+1.
