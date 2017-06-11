@@ -32,14 +32,13 @@ adjacent(Lin1,Col1,Lin1,Col2):-Col1<7, Col2 is Col1+1.
 adjacent(Lin1,Col1,Lin1,Col2):-Col1>0, Col2 is Col1-1.
 
 cannot_freeze(B,[Lin1,Col1,_,silver]):-adjacent(Lin1,Col1,Lin2,Col2), in([Lin2,Col2,_,silver],B).
+freeze(B,[Lin1,Col1,X,silver]):- \+cannot_freeze(B,[Lin1,Col1,X,silver]), adjacent(Lin1,Col1,Lin2,Col2), in([Lin2,Col2,Y,gold],B), plus_fort(Y,X).
 
 plus_fort(Y,rabbit):-Y\=rabbit.
 plus_fort(Y,cat):-Y\=rabbit, Y\=cat.
 plus_fort(Y,dog):-Y\=rabbit, Y\=cat, Y\=dog.
 plus_fort(Y,horse):-Y\=rabbit, Y\=cat, Y\=dog, Y\=horse.
 plus_fort(elephant,camel).
-
-freeze(B,[Lin1,Col1,X,silver]):- \+cannot_freeze(B,[Lin1,Col1,X,silver]), adjacent(Lin1,Col1,Lin2,Col2), in([Lin2,Col2,Y,gold],B), plus_fort(Y,X).
 
 en_avant(B,[Lin1,Col1,_,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1<7, Lin2 is Lin1+1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1],silver).
 en_arriere(B,[Lin1,Col1,Type,silver],[[Lin1,Col1],[Lin2,Col1]]):- Lin1>0, Type\=rabbit, Lin2 is Lin1-1, \+in([Lin2,Col1,_,_],B), notrap(B,[Lin2,Col1],[Lin1,Col1],silver).
@@ -56,8 +55,8 @@ possible_moves(_,[],_,_):-!.
 possible_moves(B,[[X,Y,T,silver]|Q],ListX,ListY):- freeze(B,[X,Y,T,silver]),!, possible_moves(B,Q,ListX,ListY).
 possible_moves(B,[[X,Y,T,silver]|Q],ListX,[M|ListY]):- en_avant(B,[X,Y,T,silver],M), \+in(M,ListX), possible_moves(B,[[X,Y,T,silver]|Q],[M|ListX],ListY).
 possible_moves(B,[[X,Y,T,silver]|Q],ListX,[M|ListY]):- en_arriere(B,[X,Y,T,silver],M), T\=rabbit, \+in(M,ListX), possible_moves(B,[[X,Y,T,silver]|Q],[M|ListX],ListY).
-possible_moves(B,[[X,Y,T,silver]|Q],ListX,[M|ListY]):- a_droite(B,T,M),  \+in(M,ListX), possible_moves(B,[[X,Y,T,silver]|Q],[M|ListX],ListY).
-possible_moves(B,[[X,Y,T,silver]|Q],ListX,[M|ListY]):- a_gauche(B,T,M), \+in(M,ListX), possible_moves(B,[[X,Y,T,silver]|Q],[M|ListX],ListY).
+possible_moves(B,[[X,Y,T,silver]|Q],ListX,[M|ListY]):- a_droite(B,[X,Y,T,silver],M),  \+in(M,ListX), possible_moves(B,[[X,Y,T,silver]|Q],[M|ListX],ListY).
+possible_moves(B,[[X,Y,T,silver]|Q],ListX,[M|ListY]):- a_gauche(B,[X,Y,T,silver],M), \+in(M,ListX), possible_moves(B,[[X,Y,T,silver]|Q],[M|ListX],ListY).
 possible_moves(B,[[X,Y,T,gold]|Q],ListX,[M|ListY]):- \+nb_moves(3), pousser_en_arriere(B,[X,Y,T,gold],M), \+in(M,ListX), possible_moves(B,[[X,Y,T,gold]|Q],[M|ListX],ListY).
 possible_moves(B,[[X,Y,T,gold]|Q],ListX,[M|ListY]):- \+nb_moves(3), pousser_en_avant(B,[X,Y,T,gold],M), \+in(M,ListX), possible_moves(B,[[X,Y,T,gold]|Q],[M|ListX],ListY).
 possible_moves(B,[[X,Y,T,gold]|Q],ListX,[M|ListY]):- \+nb_moves(3), pousser_a_droite(B,[X,Y,T,gold],M), \+in(M,ListX), possible_moves(B,[[X,Y,T,gold]|Q],[M|ListX],ListY).
@@ -67,18 +66,14 @@ possible_moves(B,[_|Q],ListX,ListY):-possible_moves(B,Q,ListX,ListY).
 adjust_board([[Lin1,Col1,X,Y]|Q], [[Lin1,Col1],[Lin2,Col2]], [[Lin2,Col2,X,Y]|Q]).
 adjust_board([X|Q1], [[Lin1,Col1],[Lin2,Col2]], [X|Q2]):-adjust_board(Q1,[[Lin1,Col1],[Lin2,Col2]],Q2).
 
-generate_move(BoardX,[T|_],T,BoardY):-adjust_board(BoardX,T,BoardY),!.
-generate_move(BoardX,[_|Q],M,BoardY):-generate_move(BoardX,Q,M,BoardY).
-
 gen_move(BoardX,Moves,[[X,Y],[A,B]],BoardY):-value_moves(BoardX,Moves,Values), max_a(Values,N), indice(Values,I,N), indice(Moves,I,[[X,Y],[A,B]]), in([X,Y,Type,gold],BoardX),!, asserta(must_follow_moves(Type,[X,Y])), adjust_board(BoardX,[[X,Y],[A,B]],BoardY).
-
 gen_move(BoardX,Moves,M,BoardY):-value_moves(BoardX,Moves,Values), max_a(Values,X), indice(Values,I,X), indice(Moves,I,M), adjust_board(BoardX,M,BoardY).
 
 value_moves(_,[],[]).
 value_moves(Board,[[[X,Y],[A,B]]|M], [100|R]) :- canwin(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[A,B]]|M], [90|R]) :- in([X,Y,_,gold],Board), trap(Board,[A,B],[X,Y],gold), value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[A,B]]|M], [80|R]) :- couldwin(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
-% value_moves(Board,[[[X,Y],[A,B]]|M], [50|R]) :- in([X,Y,_,gold],Board), value_moves(Board,M,R),!.
+% value_moves(Board,[[[X,Y],[A,B]]|M], [50|R]) :- in([X,Y,_,gold],Board), \+trap(Board,[A,B],[X,Y],gold), value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[X2,Y]]|M], [20|R]) :- in([X,Y,rabbit,silver],Board), X2 is X+1, value_moves(Board,M,R),!.
 value_moves(Board,[_|M],[10|R]) :- value_moves(Board,M,R).
 
@@ -86,7 +81,6 @@ indice([X|_],1,X).
 indice([_|Y],N,X):- indice(Y,M,X),N is M+1.
 
 max_a([T|List],IndiceMax):-max(List,T,IndiceMax).
-
 max([],Max,Max).
 max([T|Q],M,Max):-T>M, max(Q,T,Max).
 max([T|Q],M,Max):-T=<M, max(Q,M,Max).
@@ -108,11 +102,6 @@ chemin([A,B],[C,D],T,[[A,B]|Q]) :- A<C,X is A+1,\+in([X,B,_,_],T),chemin([X,B],[
 chemin([A,B],[C,D],T,[[A,B]|Q]) :- A>C,X is A-1,\+in([X,B,_,_],T),chemin([X,B],[C,D],T,Q).
 chemin([A,B],[C,D],T,[[A,B]|Q]) :- B<D,X is B+1,\+in([X,B,_,_],T),chemin([A,X],[C,D],T,Q).
 chemin([A,B],[C,D],T,[[A,B]|Q]) :- B>D,X is B-1,\+in([X,B,_,_],T),chemin([A,X],[C,D],T,Q).
-
-pcc([A,B],[C,D],T,Cmin):-chemin([A,B],[C,D],T,Ct),pcc2([A,B],[C,D],T,Ct,Cmin).
-
-pcc2([A,B],[C,D],T,Ct,Cmin):-chemin([A,B],[C,D],T,L),longueur(L,N1),longueur(Ct,N2),N1<N2,pcc2([A,B],[C,D],T,L,Cmin).
-pcc2(_,_,_,Cmin,Cmin).
 
 valabs(X,Y) :- X<0,Y is (-1)*X,!.	%Calcul de la valeur absolue : valabs(x,|x|)
 valabs(X,X).
