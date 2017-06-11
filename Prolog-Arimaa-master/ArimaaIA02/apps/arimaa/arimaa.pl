@@ -74,11 +74,13 @@ gen_move(BoardX,Moves,[[X,Y],[A,B]],BoardY):-value_moves(BoardX,Moves,Values), m
 gen_move(BoardX,Moves,M,BoardY):-value_moves(BoardX,Moves,Values), max_a(Values,X), indice(Values,I,X), indice(Moves,I,M), adjust_board(BoardX,M,BoardTmp), checktraps(BoardTmp, BoardTmp, BoardY).
 
 value_moves(_,[],[]).
-value_moves(Board,[[[X,Y],[A,B]]|M], [100|R]) :- canwin(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[A,B]]|M], [100|R]) :- canwin(Board,[X,Y],silver,[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[A,B]]|M], [95|R]) :- in([L,C,rabbit,gold],Board), in([X,Y,T,silver],Board), canwin(Board,[L,C],gold,[[L,C]|_]), adjacent(L,C,A,B),plus_fort(T,rabbit), value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[A,B]]|M], [90|R]) :- in([X,Y,_,gold],Board), trap(Board,[A,B],[X,Y],gold), value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[A,B]]|M], [80|R]) :- couldwin(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
 %value_moves(Board,[[[X,Y],[_,_]]|M], [50|R]) :- in([X,Y,_,gold],Board), value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[A,B]]|M], [20|R]) :- progress(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[A,B]]|M], [0|R]) :- in([X,Y,_,gold],Board), A=0, value_moves(Board,M,R),!.
 value_moves(Board,[_|M],[10|R]) :- value_moves(Board,M,R).
 
 indice([X|_],1,X).
@@ -133,11 +135,20 @@ couldwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,5],B,C).
 couldwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,6],B,C).
 couldwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,7],B,C).
 
-canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,0],B,C), longueur(C,L), L=<4.
-canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,1],B,C), longueur(C,L), L=<4.
-canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,2],B,C), longueur(C,L), L=<4.
-canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,3],B,C), longueur(C,L), L=<4.
-canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,4],B,C), longueur(C,L), L=<4.
-canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,5],B,C), longueur(C,L), L=<4.
-canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,6],B,C), longueur(C,L), L=<4.
-canwin(B,[X,Y],C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,7],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], gold,C):-in([X,Y,rabbit,gold],B), chemin([X,Y],[0,0],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], gold,C):-in([X,Y,rabbit,gold],B), chemin([X,Y],[0,1],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], gold,C):-in([X,Y,rabbit,gold],B), chemin([X,Y],[0,2],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], gold,C):-in([X,Y,rabbit,gold],B), chemin([X,Y],[0,3],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], gold,C):-in([X,Y,rabbit,gold],B), chemin([X,Y],[0,4],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], gold,C):-in([X,Y,rabbit,gold],B), chemin([X,Y],[0,5],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], gold,C):-in([X,Y,rabbit,gold],B), chemin([X,Y],[0,6],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], gold,C):-in([X,Y,rabbit,gold],B), chemin([X,Y],[0,7],B,C), longueur(C,L), L=<4.
+
+canwin(B,[X,Y], silver,C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,0],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], silver,C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,1],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], silver,C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,2],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], silver,C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,3],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], silver,C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,4],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], silver,C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,5],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], silver,C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,6],B,C), longueur(C,L), L=<4.
+canwin(B,[X,Y], silver,C):-in([X,Y,rabbit,silver],B), chemin([X,Y],[7,7],B,C), longueur(C,L), L=<4.
