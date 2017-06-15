@@ -19,7 +19,7 @@ get_moves([Move1,Move2,Move3,Move4], _, Board):- asserta(must_follow_moves(null,
 						 retractall(must_follow_moves(_,_)).
 
 in(_,[]):-fail.
-in(X,[X|_]):-!.
+in(X,[X|_]).
 in(X,[_|Q]):-in(X,Q).
 
 different_list([T1|_],[T2|_]):-T1\=T2.
@@ -75,12 +75,11 @@ gen_move(BoardX,Moves,M,BoardY):-value_moves(BoardX,Moves,Values), max_a(Values,
 
 value_moves(_,[],[]).
 value_moves(Board,[[[X,Y],[A,B]]|M], [100|R]) :- canwin(Board,[X,Y],silver,[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
-value_moves(Board,[[[X,Y],[A,B]]|M], [95|R]) :- in([L,C,rabbit,gold],Board), in([X,Y,T,silver],Board), canwin(Board,[L,C],gold,[[L,C]|_]), adjacent(L,C,A,B),plus_fort(T,rabbit), value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[A,B]]|M], [95|R]) :- in([L,C,rabbit,gold],Board), canwin(Board,[L,C],gold,[[L,C]|_]), in([X,Y,T,silver],Board), adjacent(L,C,A,B), plus_fort(T,rabbit), value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[A,B]]|M], [90|R]) :- in([X,Y,_,gold],Board), \+notrap(Board,[A,B],[X,Y],gold), value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[A,B]]|M], [80|R]) :- couldwin(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
-%value_moves(Board,[[[X,Y],[_,_]]|M], [50|R]) :- in([X,Y,_,gold],Board), value_moves(Board,M,R),!.
 value_moves(Board,[[[X,Y],[A,B]]|M], [20|R]) :- progress(Board,[X,Y],[[X,Y]|[[A,B]|_]]), value_moves(Board,M,R),!.
-value_moves(Board,[[[X,Y],[A,B]]|M], [0|R]) :- in([X,Y,_,gold],Board), A=:=0, value_moves(Board,M,R),!.
+value_moves(Board,[[[X,Y],[0,_]]|M], [0|R]) :- in([X,Y,rabbit,gold],Board), value_moves(Board,M,R),!.
 value_moves(Board,[_|M],[10|R]) :- value_moves(Board,M,R).
 
 indice([X|_],1,X).
